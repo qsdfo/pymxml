@@ -1,4 +1,4 @@
 from pymxml.pymxml import mxml_read
 
 if __name__ == '__main__':
-    mxml_read('test.xml')
+    notes_list, mxml_elements = mxml_read('test.xml')
