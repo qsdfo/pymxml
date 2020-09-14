@@ -1,4 +1,4 @@
-import music21 as music21
+import music21
 
 
 def mxml_read(filepath):
