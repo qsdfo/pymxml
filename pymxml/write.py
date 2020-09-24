@@ -8,30 +8,36 @@ def mxml_write(score, notes_list):
     :return:
     """
     # First parse notes_list index by part_id and notes_id
-    id_to_colour = {}
+    id_to_meta = {}
     for notes in notes_list:
         for note in notes:
             colour = note['colour']
+            text = note['text']
             m21_identifiers = note['m21_identifiers']
             for m21_identifier in m21_identifiers:
                 part_identifier = m21_identifier['part_identifier']
                 element_identifier = m21_identifier['element_identifier']
                 chord_index = m21_identifier['chord_index']
-                if part_identifier not in id_to_colour:
-                    id_to_colour[part_identifier] = {}
-                id_to_colour[part_identifier][(
-                    element_identifier, chord_index)] = colour
+                if part_identifier not in id_to_meta:
+                    id_to_meta[part_identifier] = {}
+                id_to_meta[part_identifier][(
+                    element_identifier, chord_index)] = {
+                        'colour': colour,
+                        'text': text
+                }
 
     # Modify score
-    for part_id, colour_dict in id_to_colour.items():
+    for part_id, meta_dict in id_to_meta.items():
         this_part = score.getElementById(part_id)
         this_part_flat = this_part.flat
-        for m21_identifier, colour in colour_dict.items():
+        for m21_identifier, metas in meta_dict.items():
             element_identifier, chord_index = m21_identifier
             this_element = this_part_flat.getElementById(element_identifier)
+            if chord_index == -1 or chord_index == 0:
+                this_element.lyric = metas['text']
             if chord_index != -1:
                 this_element = this_element[chord_index]
-            this_element.style.color = colour
+            this_element.style.color = metas['colour']
     return score
 
 
