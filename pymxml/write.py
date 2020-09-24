@@ -29,14 +29,6 @@ def mxml_write(score, notes_list):
         for m21_identifier, colour in colour_dict.items():
             element_identifier, chord_index = m21_identifier
             this_element = this_part_flat.getElementById(element_identifier)
-
-            # FIXME: part.id is not unique, so in case several
-            # parts have the same id,
-            # getElementById return one of them which does not necessarily contain
-            # the required element....
-            if this_element is None:
-                continue
-
             if chord_index != -1:
                 this_element = this_element[chord_index]
             this_element.style.color = colour

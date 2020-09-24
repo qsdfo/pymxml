@@ -3,7 +3,8 @@ import music21
 
 def mxml_read(filepath):
     subdivision = 64
-    m21_score = music21.converter.parse(filepath)
+    m21_score_dirty = music21.converter.parse(filepath)
+    m21_score = sanitize_score(m21_score_dirty)
     notes_list = read_score(m21_score, subdivision)
     return notes_list, m21_score
 
@@ -121,3 +122,18 @@ def get_pitch_velocity(note):
         velocity = 128
     pitch = note_to_midiPitch(note)
     return pitch, velocity
+
+def sanitize_score(score):
+    """
+    Simply prevents two parts to have the same id
+    """
+    part_ids = []
+    for part in score.parts:
+        part_identifier = part.id
+        if part_identifier in part_ids:
+            new_part_identifier = part_identifier + '_'
+            part.id = new_part_identifier
+        else:
+            new_part_identifier = part_identifier
+        part_ids.append(new_part_identifier)
+    return score
