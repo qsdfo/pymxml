@@ -1,5 +1,6 @@
 import music21 as music21
 
+
 def mxml_write(score, notes_list):
     """
     :param durations:
@@ -18,14 +19,24 @@ def mxml_write(score, notes_list):
                 chord_index = m21_identifier['chord_index']
                 if part_identifier not in id_to_colour:
                     id_to_colour[part_identifier] = {}
-                id_to_colour[part_identifier][(element_identifier, chord_index)] = colour
+                id_to_colour[part_identifier][(
+                    element_identifier, chord_index)] = colour
 
     # Modify score
     for part_id, colour_dict in id_to_colour.items():
-        this_part_flat = score.getElementById(part_id).flat
+        this_part = score.getElementById(part_id)
+        this_part_flat = this_part.flat
         for m21_identifier, colour in colour_dict.items():
             element_identifier, chord_index = m21_identifier
             this_element = this_part_flat.getElementById(element_identifier)
+
+            # FIXME: part.id is not unique, so in case several
+            # parts have the same id,
+            # getElementById return one of them which does not necessarily contain
+            # the required element....
+            if this_element is None:
+                continue
+
             if chord_index != -1:
                 this_element = this_element[chord_index]
             this_element.style.color = colour
@@ -46,7 +57,8 @@ def change_color(filepath):
                 m21_notes = element._notes
                 identifier = element.id
                 for chord_index, m21_note in enumerate(m21_notes):
-                    part_flat.getElementById(identifier)[chord_index].style.color = 'red'
+                    part_flat.getElementById(identifier)[
+                        chord_index].style.color = 'red'
             else:
                 m21_notes = element
                 identifier = element.id
