@@ -1,15 +1,16 @@
+import math
 import music21
 
 
 def mxml_read(filepath):
-    subdivision = 64
+    precision = 0.01
     m21_score_dirty = music21.converter.parse(filepath)
     m21_score = sanitize_score(m21_score_dirty)
-    notes_list = read_score(m21_score, subdivision)
+    notes_list = read_score(m21_score, precision)
     return notes_list, m21_score
 
 
-def read_score(score, subdivision):
+def read_score(score, precision):
     # Transpose the score at sounding pitch. Simplify when transposing
     # instruments are in the score
     # try:
@@ -32,7 +33,7 @@ def read_score(score, subdivision):
             # Need to quantize at some point...
             offset = element.offset
             duration = element.duration.quarterLength
-            offset_quantized = int(round(offset) * subdivision) // subdivision
+            offset_quantized = math.floor(offset / precision) * precision
 
             is_chord = False
             if element.isChord:
@@ -63,7 +64,11 @@ def read_score(score, subdivision):
                     'velocity': velocity,
                     'instrument': instrument,
                     'm21_identifiers': [m21_identifier],
-                    'id': id
+                    'id': id,
+                    # Metas informations
+                    'color': None,
+                    'text': None,
+                    'harmony': None
                 }
 
                 # check for ties
@@ -100,7 +105,10 @@ def read_score(score, subdivision):
     offset_quantized_list = sorted(notes_dict.keys())
     notes_list = []
     for time in offset_quantized_list:
-        notes_list.append(notes_dict[time])
+        # Sort by decreasing pitch
+        notes_dict_t = notes_dict[time]
+        sorted_by_pitch_notes = sorted(notes_dict_t, key=lambda x: -x['pitch'])
+        notes_list.append(sorted_by_pitch_notes)
     return notes_list
 
 

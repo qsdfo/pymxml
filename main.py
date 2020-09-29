@@ -4,35 +4,74 @@ import random
 
 
 if __name__ == '__main__':
-    filepath = 'xmlsamples/ActorPreludeSample.musicxml'
-    # filepath = 'xmlsamples/MozartPianoSonata.mxl'
+    # filepath = 'xmlsamples/ActorPreludeSample.musicxml'
+    filepath = 'xmlsamples/MozartPianoSonata.mxl'
     notes_list, m21_score = mxml_read(filepath)
 
     #########################
-    # Randomly adding colours for testing
-    notes_list_coloured = []
-    for notes in notes_list:
-        notes_coloured = []
-        for note in notes:
-            colour = random.choice(['red', 'blue', 'green'])
-            note_coloured = note
-            note_coloured['colour'] = colour
-            notes_coloured.append(note_coloured)
-        notes_list_coloured.append(notes_coloured)
+    # Messy example
+    # Randomly adding colors for testing
+    # notes_list_colored = []
+    # counter = 0
+    # for notes in notes_list:
+    #     notes_colored = []
+    #     for note in notes:
+    #         color = random.choice(['red', 'blue', 'green'])
+    #         # write_text_bool = random.choice([True, False])
+    #         # write_harmo_bool = random.choice([True, False])
+    #         write_text_bool = False
+    #         write_harmo_bool = True
+    #         note_colored = note
+    #         note_colored['color'] = color
+    #         if write_text_bool:
+    #             note_colored['text'] = str(counter)
+    #         if write_harmo_bool:
+    #             note_colored['harmony'] = {
+    #                 'function': 'V'
+    #                 }
+    #         notes_colored.append(note_colored)
+    #         counter += 1
+    #     notes_list_colored.append(notes_colored)
     #########################
 
-    # # DEBUG: 139971019057568
-    # for part in m21_score.parts:
-    #     part_identifier = part.id
-    #     if part_identifier == '1 2':
-    #         print('yolo')
-    #     part_flat = part.flat
-    #     elements_iterator = part_flat.notes
-    #     instrument = part.partName
-    #     for element in elements_iterator:
-    #         element_identifier = element.id
-    #         # Need to quantize at some point...
-    # # DEBUG:
+    #########################
+    # Messy example
+    # Randomly adding colors for testing
+    notes_list_colored = []
+    counter = 0
+    for notes in notes_list:
+        notes_colored = []
+        for ind_note, note in enumerate(notes):
+            color = random.choice(['red', 'blue', 'green'])
+            if ind_note == 0:
+                write_text_bool = random.choice([True, False])
+                # write_harmo_bool = True
+                write_harmo_bool = False
+            else:
+                write_text_bool = False
+                write_harmo_bool = False
+            note_colored = note
+            note_colored['color'] = color
+            if write_text_bool:
+                note_colored['text'] = str(counter)
+            if write_harmo_bool:
+                note_colored['harmony'] = {
+                    'function': 'V',
+                    'kind': 'major',
+                    'root': 'C',
+                    'bass': 'E',
+                }
+            notes_colored.append(note_colored)
+            counter += 1
+            notes_list_colored.append(notes_colored)
+    #########################
 
-    modified_score = mxml_write(m21_score, notes_list_coloured)
+    modified_score = mxml_write(m21_score, notes_list_colored)
     modified_score.write(fp='out_test_color.mxml', fmt='musicxml')
+
+    # import music21
+    # s1 = music21.stream.Stream()
+    # s1.append(music21.note.Note('C#4', type='half', lyric='death'))
+    # s1.append(music21.note.Note('D5', type='quarter'))
+    # s1.insert(0, music21.harmony.ChordSymbol(kind='minor', kindStr='m', root='C'))
+    # s1.write(fp='testounet.mxml', fmt='musicxml')

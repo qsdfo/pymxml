@@ -11,8 +11,9 @@ def mxml_write(score, notes_list):
     id_to_meta = {}
     for notes in notes_list:
         for note in notes:
-            colour = note['colour']
+            color = note['color']
             text = note['text']
+            harmony = note['harmony']
             m21_identifiers = note['m21_identifiers']
             for m21_identifier in m21_identifiers:
                 part_identifier = m21_identifier['part_identifier']
@@ -22,23 +23,65 @@ def mxml_write(score, notes_list):
                     id_to_meta[part_identifier] = {}
                 id_to_meta[part_identifier][(
                     element_identifier, chord_index)] = {
-                        'colour': colour,
-                        'text': text
+                        'color': color,
+                        'text': text,
+                        'harmony': harmony
                 }
 
-    # Modify score
+    # First pass to color existing lyrics
     for part_id, meta_dict in id_to_meta.items():
         this_part = score.getElementById(part_id)
         this_part_flat = this_part.flat
         for m21_identifier, metas in meta_dict.items():
             element_identifier, chord_index = m21_identifier
             this_element = this_part_flat.getElementById(element_identifier)
-            if chord_index == -1 or chord_index == 0:
-                this_element.lyric = metas['text']
+            if metas['color'] is not None:
+                for this_lyric in this_element.lyrics:
+                    this_lyric.style.color = metas['color']
+
+    new_score = music21.stream.Stream()
+    # Modify score
+    for part_id, meta_dict in id_to_meta.items():
+        this_part = score.getElementById(part_id)
+        this_part_flat = this_part.flat
+        for m21_identifier, metas in meta_dict.items():
+            # Get element in the part
+            element_identifier, chord_index = m21_identifier
+            this_element = this_part_flat.getElementById(element_identifier)
+
+            # Add colored text
+            if metas['text'] is not None:
+                if chord_index != -1:
+                    lyric_identifier = f'{element_identifier}_{chord_index}'
+                else:
+                    lyric_identifier = f'{element_identifier}'
+
+                # FIXME: if two or more voices are written, lyrics might be placed at the same position (-1 for melodies)
+                this_element.addLyric(
+                    metas['text'], lyricNumber=chord_index, lyricIdentifier=lyric_identifier)
+
+                if metas['color'] is not None:
+                    for this_lyric in this_element.lyrics:
+                        if this_lyric.identifier == lyric_identifier:
+                            this_lyric.style.color = metas['color']
+
+            # Add colored roman numeral analysis
+            if metas['harmony'] is not None:
+                offset = this_element.offset
+                this_harmo = None
+                if 'function' in metas['harmony']:
+                    this_harmo = music21.harmony.ChordSymbol(**metas['harmony'])
+                if (metas['color'] is not None) and (this_harmo is not None):
+                    this_harmo.style.color = metas['color']
+                    this_part_flat.insert(offset, this_harmo)
+
+            # Color note
             if chord_index != -1:
                 this_element = this_element[chord_index]
-            this_element.style.color = metas['colour']
-    return score
+            if metas['color'] is not None:
+                this_element.style.color = metas['color']
+        new_score.append(this_part_flat)
+    return new_score
 
 
 def change_color(filepath):
