@@ -45,8 +45,8 @@ if __name__ == '__main__':
             color = random.choice(['red', 'blue', 'green'])
             if ind_note == 0:
                 write_text_bool = random.choice([True, False])
-                # write_harmo_bool = True
-                write_harmo_bool = False
+                write_harmo_bool = True
+                # write_harmo_bool = False
             else:
                 write_text_bool = False
                 write_harmo_bool = False
@@ -55,12 +55,17 @@ if __name__ == '__main__':
             if write_text_bool:
                 note_colored['text'] = str(counter)
             if write_harmo_bool:
-                note_colored['harmony'] = {
+                note_colored['harmony'].append({
                     'function': 'V',
                     'kind': 'major',
                     'root': 'C',
                     'bass': 'E',
-                }
+                })
+                note_colored['harmony'].append({
+                    'function': 'I',
+                    'kind': 'minor',
+                    'root': 'E',
+                })
             notes_colored.append(note_colored)
             counter += 1
             notes_list_colored.append(notes_colored)

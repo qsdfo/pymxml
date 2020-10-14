@@ -68,7 +68,7 @@ def read_score(score, precision):
                     # Metas informations
                     'color': None,
                     'text': None,
-                    'harmony': None
+                    'harmony': []
                 }
 
                 # check for ties

@@ -66,13 +66,15 @@ def mxml_write(score, notes_list):
                             this_lyric.style.color = metas['color']
 
             # Add colored roman numeral analysis
-            if metas['harmony'] is not None:
+            if len(metas['harmony']) > 0:
+                assert len(metas['harmony']) < 3, "can't have more than two harmony elements for a single note"
                 offset = this_element.offset
-                this_harmo = None
-                if 'function' in metas['harmony']:
-                    this_harmo = music21.harmony.ChordSymbol(**metas['harmony'])
-                if (metas['color'] is not None) and (this_harmo is not None):
-                    this_harmo.style.color = metas['color']
+                for ind_harmo, harmony in enumerate(metas['harmony']):
+                    this_harmo = music21.harmony.ChordSymbol(**harmony)
+                    if metas['color'] is not None:
+                        this_harmo.style.color = metas['color']
+                    if ind_harmo == 1:
+                        this_harmo.style.relativeY = 100
                     this_part_flat.insert(offset, this_harmo)
 
             # Color note
