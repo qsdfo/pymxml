@@ -5,7 +5,8 @@ import random
 
 if __name__ == '__main__':
     # filepath = 'xmlsamples/ActorPreludeSample.musicxml'
-    filepath = 'xmlsamples/MozartPianoSonata.mxl'
+    # filepath = 'xmlsamples/MozartPianoSonata.mxl'
+    filepath = 'xmlsamples/Test_leadsheet.musicxml'
     notes_list, m21_score = mxml_read(filepath)
 
     #########################
@@ -45,8 +46,8 @@ if __name__ == '__main__':
             color = random.choice(['red', 'blue', 'green'])
             if ind_note == 0:
                 write_text_bool = random.choice([True, False])
-                write_harmo_bool = True
-                # write_harmo_bool = False
+                # write_harmo_bool = True
+                write_harmo_bool = False
             else:
                 write_text_bool = False
                 write_harmo_bool = False

@@ -20,6 +20,7 @@ def read_score(score, precision):
 
     # Output
     notes_dict = {}
+    chord_symbols = []
     tied_notes = {}
     id = 0
 
@@ -34,6 +35,18 @@ def read_score(score, precision):
             offset = element.offset
             duration = element.duration.quarterLength
             offset_quantized = math.floor(offset / precision) * precision
+
+            # Element can be a chord symbol in lead sheets
+            if 'ChordSymbol' in element.classes:
+                this_chord_symbol = {
+                    'offset': offset_quantized,
+                    'figure': element.figure,
+                    'kind': element.chordKind,
+                    'root': element.root(),
+                    'bass': element.bass(),
+                }
+                chord_symbols.append(this_chord_symbol)
+                continue
 
             is_chord = False
             if element.isChord:
@@ -92,7 +105,7 @@ def read_score(score, precision):
                             tied_notes.pop(pitch, None)
                             write = True
 
-                # Write in list of notes
+                # Write in dict of notes
                 if write:
                     if this_note['offset_quantized'] in notes_dict.keys():
                         notes_dict[this_note['offset_quantized']].append(
@@ -101,14 +114,30 @@ def read_score(score, precision):
                         notes_dict[this_note['offset_quantized']] = [this_note]
                 id = id + 1
 
-    # Transform to the correct format
+    # Sort chord symbols by offset times
+    if len(chord_symbols) > 0:
+        chord_symbols = sorted(chord_symbols, key=lambda x: x['offset'])
+
+    # Convert dict to list sorted by offset time
     offset_quantized_list = sorted(notes_dict.keys())
     notes_list = []
     for time in offset_quantized_list:
+        while((len(chord_symbols) > 1) and (time >= chord_symbols[1]['offset'])):
+            chord_symbols.pop(0)
+
         # Sort by decreasing pitch
         notes_dict_t = notes_dict[time]
-        sorted_by_pitch_notes = sorted(notes_dict_t, key=lambda x: -x['pitch'])
-        notes_list.append(sorted_by_pitch_notes)
+        notes_to_write = sorted(notes_dict_t, key=lambda x: -x['pitch'])
+        if (len(chord_symbols) > 0):
+            harmo_dict = {
+                # 'figure': chord_symbols[0]['figure'],
+                'kind': chord_symbols[0]['kind'],
+                'root': chord_symbols[0]['root'],
+                'bass': chord_symbols[0]['bass']
+            }
+            for e in notes_to_write:
+                e['harmony'].append(harmo_dict)
+        notes_list.append(notes_to_write)
     return notes_list
 
 
