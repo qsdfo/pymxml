@@ -42,8 +42,9 @@ def read_score(score, precision):
                     'offset': offset_quantized,
                     'figure': element.figure,
                     'kind': element.chordKind,
-                    'root': element.root(),
-                    'bass': element.bass(),
+                    'chord_notes': element.pitchNames if element else [],
+                    'root': element.root().nameWithOctave if element else None,
+                    'bass': element.bass().nameWithOctave if element else None,
                 }
                 chord_symbols.append(this_chord_symbol)
                 continue
@@ -68,12 +69,14 @@ def read_score(score, precision):
                         'element_identifier': element_identifier,
                         'chord_index': -1
                     }
-                pitch, velocity = get_pitch_velocity(m21_note)
+                octave,note_name, pitch, velocity = get_pitch_velocity(m21_note)
                 this_note = {
                     'offset': offset,
                     'offset_quantized': offset_quantized,
                     'duration': duration,
                     'pitch': pitch,
+                    'note': note_name,
+                    'octave': octave,
                     'velocity': velocity,
                     'instrument': instrument,
                     'm21_identifiers': [m21_identifier],
@@ -133,7 +136,8 @@ def read_score(score, precision):
                 # 'figure': chord_symbols[0]['figure'],
                 'kind': chord_symbols[0]['kind'],
                 'root': chord_symbols[0]['root'],
-                'bass': chord_symbols[0]['bass']
+                'bass': chord_symbols[0]['bass'],
+                'chord_notes': chord_symbols[0]['chord_notes']
             }
             for e in notes_to_write:
                 e['harmony'].append(harmo_dict)
@@ -158,7 +162,7 @@ def get_pitch_velocity(note):
     if velocity is None:
         velocity = 128
     pitch = note_to_midiPitch(note)
-    return pitch, velocity
+    return note.nameWithOctave, note.name, pitch, velocity
 
 def sanitize_score(score):
     """
