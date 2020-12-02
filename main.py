@@ -4,7 +4,7 @@ import random
 
 
 if __name__ == '__main__':
-    filepath = 'data/leadsheets_slurs.xml'
+    filepath = 'data/leadsheet_slurs.xml'
     notes_list, m21_score = mxml_read(filepath)
 
     #########################
