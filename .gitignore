@@ -1,6 +1,8 @@
 *.pyc
+*.mscz
 *.xml
 venv
 .vscode
 xmlsamples
 *.mscz,
+venv_win/*

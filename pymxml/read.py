@@ -3,33 +3,66 @@ import music21
 
 
 def mxml_read(filepath):
-    precision = 0.01
     m21_score_dirty = music21.converter.parse(filepath)
     m21_score = sanitize_score(m21_score_dirty)
-    notes_list = read_score(m21_score, precision)
+    notes_list = read_score(m21_score)
     return notes_list, m21_score
 
 
-def read_score(score, precision):
-    # Transpose the score at sounding pitch. Simplify when transposing
-    # instruments are in the score
-    # try:
-    #     score_soundingPitch = score.toSoundingPitch()
-    # except:
-    #     score_soundingPitch = score
+def read_score(score):
+    """
+    Read a musicxml file and output a list of dictionnaries containing:
+        - notes: the notes occuring in the different parts of the score sorted by offset time.
+        - harmonies: the (possibly several) harmonic analysis/interpretation of the chord formed by the notes
+    Thus, returned notes_list has the following structure
+
+    notes_list = [{
+                    notes: [note],
+                    harmonies: [harmony]}
+                ]
+
+    where note is a dictionnary containing the following informations
+
+    note = {
+        'id': unique identifier associated to each note in the score,
+        'offset': time offset in quarter notes quantized using the precision variable,
+        'duration': duration of the note in quarter length,
+        'tie_previous_id': indicate if the note is tied to a previous note. If no set to None, if yes, set to the 'id' of the previous note,
+        'pitch': pitch,
+        'velocity': velocity,
+        'instrument': instrument,
+        'm21_identifier': music21 identifier, needed to modify the graphic rendering after the analysis, BUT NOT CONSISTENT ACCROSS MULTIPLE RUNS!!,
+        # Metas informations
+        'color': None,
+        'text': None,
+    }
+
+    and harmony is a dictionnary
+    
+    harmony = {
+        'id': unique identifier,
+        'offset':
+        'kind': chord_symbols[0]['kind'],
+        'root': chord_symbols[0]['root'],
+        'bass': chord_symbols[0]['bass'],
+        'colour': 
+    }
+    """
+    # Parameters
+    precision = 0.01
 
     # Output
     notes_dict = {}
     chord_symbols = []
     tied_notes = {}
-    id = 0
+    id = None
 
-    for part in score.parts:
+    for part_index, part in enumerate(score.parts):
         part_identifier = part.id
         part_flat = part.flat
         elements_iterator = part_flat.notes
         instrument = part.partName
-        for element in elements_iterator:
+        for element_index, element in enumerate(elements_iterator):
             element_identifier = element.id
             # Need to quantize at some point...
             offset = element.offset
@@ -38,12 +71,19 @@ def read_score(score, precision):
 
             # Element can be a chord symbol in lead sheets
             if 'ChordSymbol' in element.classes:
+                # Create the chord identifier
+                id = f'{part_index}_{element_index}'
+                # Existing color?
+                color = element.style.color
+
                 this_chord_symbol = {
+                    'id': id,
                     'offset': offset_quantized,
                     'figure': element.figure,
                     'kind': element.chordKind,
                     'root': element.root(),
                     'bass': element.bass(),
+                    'color': color,
                 }
                 chord_symbols.append(this_chord_symbol)
                 continue
@@ -69,50 +109,55 @@ def read_score(score, precision):
                         'chord_index': -1
                     }
                 pitch, velocity = get_pitch_velocity(m21_note)
+
+                # Create the note identifier
+                id = f'{part_index}_{element_index}_{chord_index}'
+                # Existing color?
+                color = element.style.color
+                # Existing text/lyrics?
+                text = element.lyrics
+                if len(text) == 0:
+                    text = None
+
                 this_note = {
-                    'offset': offset,
-                    'offset_quantized': offset_quantized,
+                    'id': id,
+                    'offset': offset_quantized,
                     'duration': duration,
+                    'tie_previous_id': None,
                     'pitch': pitch,
                     'velocity': velocity,
                     'instrument': instrument,
-                    'm21_identifiers': [m21_identifier],
-                    'id': id,
+                    'm21_identifier': m21_identifier,
                     # Metas informations
-                    'color': None,
-                    'text': None,
-                    'harmony': []
+                    'color': color,
+                    'text': text,
                 }
 
                 # check for ties
-                write = True
                 if m21_note.tie:
-                    write = False
                     if m21_note.tie.type == 'start':
-                        tied_notes[pitch] = this_note
+                        tied_notes[pitch] = id
                     else:
-                        # find the tied notes and append duration
-                        if pitch in tied_notes:
-                            tied_notes[pitch]['duration'] += duration
-                            tied_notes[pitch]['m21_identifiers'].append(
-                                m21_identifier)
-                        else:
+                        if pitch not in tied_notes:
                             raise Exception(
                                 'Trying to tie a note which \
                                     does not have a starting tie')
+
+                        # Get the id of the previous note
+                        previous_note_id = tied_notes[pitch]
+                        this_note['tie_previous_id'] = previous_note_id
+                        # Replace the id in tied_notes with id of the current note
+                        tied_notes[pitch] = id
+                        # If it was the last note in the tie, remove from the list of tied notes
                         if m21_note.tie.type == 'stop':
-                            this_note = tied_notes[pitch]
                             tied_notes.pop(pitch, None)
-                            write = True
 
                 # Write in dict of notes
-                if write:
-                    if this_note['offset_quantized'] in notes_dict.keys():
-                        notes_dict[this_note['offset_quantized']].append(
-                            this_note)
-                    else:
-                        notes_dict[this_note['offset_quantized']] = [this_note]
-                id = id + 1
+                if this_note['offset'] in notes_dict.keys():
+                    notes_dict[this_note['offset']].append(
+                        this_note)
+                else:
+                    notes_dict[this_note['offset']] = [this_note]
 
     # Sort chord symbols by offset times
     if len(chord_symbols) > 0:
@@ -128,16 +173,19 @@ def read_score(score, precision):
         # Sort by decreasing pitch
         notes_dict_t = notes_dict[time]
         notes_to_write = sorted(notes_dict_t, key=lambda x: -x['pitch'])
+
+        # Process possible already existing harmony (for leadsheets for example)
         if (len(chord_symbols) > 0):
-            harmo_dict = {
-                # 'figure': chord_symbols[0]['figure'],
-                'kind': chord_symbols[0]['kind'],
-                'root': chord_symbols[0]['root'],
-                'bass': chord_symbols[0]['bass']
-            }
-            for e in notes_to_write:
-                e['harmony'].append(harmo_dict)
+            harmonies_to_write = [dict(chord_symbols[0])]
+        else:
+            harmonies_to_write = None
         notes_list.append(notes_to_write)
+        notes_list.append(
+            {
+                'notes': notes_to_write,
+                'harmonies': harmonies_to_write
+            }
+        )
     return notes_list
 
 
