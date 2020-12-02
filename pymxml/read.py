@@ -41,10 +41,10 @@ def read_score(score):
     
     harmony = {
         'id': unique identifier,
-        'offset':
-        'kind': chord_symbols[0]['kind'],
-        'root': chord_symbols[0]['root'],
-        'bass': chord_symbols[0]['bass'],
+        'offset': ,
+        'kind': ,
+        'root': ,
+        'bass': ,
         'colour': 
     }
     """
@@ -179,7 +179,6 @@ def read_score(score):
             harmonies_to_write = [dict(chord_symbols[0])]
         else:
             harmonies_to_write = None
-        notes_list.append(notes_to_write)
         notes_list.append(
             {
                 'notes': notes_to_write,
