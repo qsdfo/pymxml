@@ -5,8 +5,8 @@ import music21
 def mxml_read(filepath):
     m21_score_dirty = music21.converter.parse(filepath)
     m21_score = sanitize_score(m21_score_dirty)
-    notes_list = read_score(m21_score)
-    return notes_list, m21_score
+    notes_list, id_to_harmony, id_to_m21_identifiers = read_score(m21_score)
+    return notes_list, id_to_harmony, id_to_m21_identifiers, m21_score
 
 
 def read_score(score):
@@ -31,14 +31,13 @@ def read_score(score):
         'pitch': pitch,
         'velocity': velocity,
         'instrument': instrument,
-        'm21_identifier': music21 identifier, needed to modify the graphic rendering after the analysis, BUT NOT CONSISTENT ACCROSS MULTIPLE RUNS!!,
         # Metas informations
         'color': None,
         'text': None,
     }
 
     and harmony is a dictionnary
-    
+
     harmony = {
         'id': unique identifier,
         'offset': ,
@@ -51,7 +50,8 @@ def read_score(score):
     # Parameters
     precision = 0.01
 
-    # Output
+    # Variables
+    id_to_m21_identifiers = {}
     notes_dict = {}
     chord_symbols = []
     tied_notes = {}
@@ -75,6 +75,13 @@ def read_score(score):
                 id = f'{part_index}_{element_index}'
                 # Existing color?
                 color = element.style.color
+                # m21_identifier
+                m21_identifier = {
+                    'part_identifier': part_identifier,
+                    'element_identifier': element_identifier,
+                }
+
+                id_to_m21_identifiers[id] = m21_identifier
 
                 this_chord_symbol = {
                     'id': id,
@@ -112,6 +119,7 @@ def read_score(score):
 
                 # Create the note identifier
                 id = f'{part_index}_{element_index}_{chord_index}'
+                id_to_m21_identifiers[id] = m21_identifier
                 # Existing color?
                 color = element.style.color
                 # Existing text/lyrics?
@@ -127,10 +135,10 @@ def read_score(score):
                     'pitch': pitch,
                     'velocity': velocity,
                     'instrument': instrument,
-                    'm21_identifier': m21_identifier,
                     # Metas informations
                     'color': color,
                     'text': text,
+                    'harmony': [],
                 }
 
                 # check for ties
@@ -166,6 +174,7 @@ def read_score(score):
     # Convert dict to list sorted by offset time
     offset_quantized_list = sorted(notes_dict.keys())
     notes_list = []
+    harmonies_dict = {}
     for time in offset_quantized_list:
         while((len(chord_symbols) > 1) and (time >= chord_symbols[1]['offset'])):
             chord_symbols.pop(0)
@@ -173,19 +182,22 @@ def read_score(score):
         # Sort by decreasing pitch
         notes_dict_t = notes_dict[time]
         notes_to_write = sorted(notes_dict_t, key=lambda x: -x['pitch'])
-
-        # Process possible already existing harmony (for leadsheets for example)
         if (len(chord_symbols) > 0):
-            harmonies_to_write = [dict(chord_symbols[0])]
-        else:
-            harmonies_to_write = None
-        notes_list.append(
-            {
-                'notes': notes_to_write,
-                'harmonies': harmonies_to_write
-            }
-        )
-    return notes_list
+            this_harmo = chord_symbols[0]
+            # harmo_dict = {
+            #     # 'figure': this_harmo['figure'],
+            #     # 'kind': this_harmo['kind'],
+            #     # 'root': this_harmo['root'],
+            #     # 'bass': this_harmo['bass'],
+            #     'id': this_harmo['id']
+            # }
+            harmo_id = chord_symbols[0]['id']
+            for e in notes_to_write:
+                e['harmony'].append(harmo_id)
+            if this_harmo['id'] not in harmonies_dict:
+                harmonies_dict[this_harmo['id']] = this_harmo
+        notes_list.append(notes_to_write)
+    return notes_list, harmonies_dict, id_to_m21_identifiers
 
 
 def note_to_midiPitch(note):

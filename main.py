@@ -5,7 +5,7 @@ import random
 
 if __name__ == '__main__':
     filepath = 'data/leadsheet_slurs.xml'
-    notes_list, m21_score = mxml_read(filepath)
+    notes_list, id_to_harmony, _, _ = mxml_read(filepath)
 
     #########################
     # Messy example
@@ -38,10 +38,7 @@ if __name__ == '__main__':
     # Randomly adding colors for testing
     notes_list_colored = []
     counter = 0
-    for notes_and_harmonies in notes_list:
-        notes = notes_and_harmonies['notes']
-        harmonies = notes_and_harmonies['harmonies']
-
+    for notes in notes_list:
         # Color notes
         notes_colored = []
         for ind_note, note in enumerate(notes):
@@ -58,23 +55,28 @@ if __name__ == '__main__':
                     note_colored['text'] = str(counter)
             notes_colored.append(note_colored)
 
-        # Color harmony
-        harmonies_colored = []
-        for harmony in harmonies:
-            if harmony['color'] is None:
-                color = random.choice(['red', 'blue', 'green'])
-            else:
-                color = harmony['color']
-            harmony_colored = harmony
-            harmony_colored['color'] = color
-            harmonies_colored.append(harmony_colored)
-
         counter += 1
-        notes_list_colored.append(
-            dict(notes=notes_colored, harmonies=harmonies_colored))
+        notes_list_colored.append(notes_colored)
     #########################
 
-    modified_score = mxml_write(m21_score, notes_list_colored)
+    # Color harmony
+    for k, v in id_to_harmony.items():
+        if v['color'] is None:
+            v['color'] = random.choice(['red', 'blue', 'green'])
+
+    # Add a chord for testing
+    id_to_harmony['nouveau_chord'] = {
+        'id': 'nouveau_chord',
+        'm21_identifier': None,
+        'offset': 0,
+        'figure': 'Fmaj7',
+        'kind': None,
+        'root': None,
+        'bass': None,
+        'color': 'yellow',
+    }
+
+    modified_score = mxml_write(filepath, notes_list_colored, id_to_harmony)
     modified_score.write(fp='out.mxml', fmt='musicxml')
 
     # import music21
