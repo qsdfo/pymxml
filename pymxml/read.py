@@ -88,8 +88,9 @@ def read_score(score):
                     'offset': offset_quantized,
                     'figure': element.figure,
                     'kind': element.chordKind,
-                    'root': element.root(),
-                    'bass': element.bass(),
+                    'chord_notes': element.pitchNames if element else [],
+                    'root': element.root().nameWithOctave if element else None,
+                    'bass': element.bass().nameWithOctave if element else None,
                     'color': color,
                 }
                 chord_symbols.append(this_chord_symbol)
@@ -115,7 +116,7 @@ def read_score(score):
                         'element_identifier': element_identifier,
                         'chord_index': -1
                     }
-                pitch, velocity = get_pitch_velocity(m21_note)
+                octave, note_name, pitch, velocity = get_pitch_velocity(m21_note)
 
                 # Create the note identifier
                 id = f'{part_index}_{element_index}_{chord_index}'
@@ -135,6 +136,8 @@ def read_score(score):
                     'pitch': pitch,
                     'velocity': velocity,
                     'instrument': instrument,
+                    'octave': octave,
+                    'note': note_name,
                     # Metas informations
                     'color': color,
                     'text': text,
@@ -217,7 +220,7 @@ def get_pitch_velocity(note):
     if velocity is None:
         velocity = 128
     pitch = note_to_midiPitch(note)
-    return pitch, velocity
+    return note.nameWithOctave, note.name, pitch, velocity
 
 def sanitize_score(score):
     """

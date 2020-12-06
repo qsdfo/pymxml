@@ -1,12 +1,17 @@
 from pymxml.write import mxml_write
 from pymxml.read import mxml_read
 import random
-
+import jsonplus as json
+import json as js
+import sys
 
 if __name__ == '__main__':
-    filepath = 'data/leadsheet_slurs.xml'
+    filepath = 'xmlsamples/Hark_The_Herald.mxl'
+    #filepath = sys.argv[1]
     notes_list, id_to_harmony, _, _ = mxml_read(filepath)
-
+    with open('song_to_analyze.json', 'w+') as f:
+        f.write(json.dumps(notes_list))
+        f.close()
     #########################
     # Messy example
     # Randomly adding colors for testing
