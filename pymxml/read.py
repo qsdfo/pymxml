@@ -197,6 +197,7 @@ def read_score(score):
             harmo_id = chord_symbols[0]['id']
             for e in notes_to_write:
                 e['harmony'].append(harmo_id)
+                e['chord_notes']=chord_symbols[0]['chord_notes']
             if this_harmo['id'] not in harmonies_dict:
                 harmonies_dict[this_harmo['id']] = this_harmo
         notes_list.append(notes_to_write)
