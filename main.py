@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # }
 
     json_path = 'data/analysis.json'
-    mxml_path = 'data/Hark_the_Herald.mxl'
+    mxml_path = 'data/Hark_the_Herald.musicxml'
 
     # modified_score = mxml_write(filepath, notes_list_colored, id_to_harmony, None)
     modified_score = mxml_write_from_json(mxml_path, json_path)
