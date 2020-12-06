@@ -1,15 +1,27 @@
 from pymxml.read import mxml_read
 import music21 as music21
+import json
 
 
-def mxml_write(filepath, notes_list, id_to_harmony):
+def mxml_write_from_json(mxml_path, json_path):
+    with open(json_path, 'r') as f:
+        id_to_color = json.load(f)
+    new_score = mxml_write(filepath=mxml_path, notes_list=None, id_to_harmony=None, id_to_color=id_to_color)
+    return new_score
+
+
+def mxml_write(filepath, notes_list, id_to_harmony, id_to_color):
     """
     :param durations:
     :param tensor_score: one-hot encoding with dimensions (time, instrument)
     :return:
     """
     # Rebuild the m21_identifiers
-    _, _, id_to_m21_identifiers, score = mxml_read(filepath)
+    if notes_list is None:
+        notes_list, id_to_harmony, id_to_m21_identifiers, score = mxml_read(
+            filepath)
+    else:
+        _, _, id_to_m21_identifiers, score = mxml_read(filepath)
 
     new_score = music21.stream.Stream()
     parts = {}
@@ -44,7 +56,12 @@ def mxml_write(filepath, notes_list, id_to_harmony):
                 this_element.addLyric(
                     note['text'], lyricNumber=chord_index, lyricIdentifier=lyric_identifier)
 
-                if note['color'] is not None:
+                if id_to_color is not None:
+                    if note['id'] in id_to_color:
+                        for this_lyric in this_element.lyrics:
+                            if this_lyric.identifier == lyric_identifier:
+                                this_lyric.style.color = id_to_color[note['id']]
+                elif note['color'] is not None:
                     for this_lyric in this_element.lyrics:
                         if this_lyric.identifier == lyric_identifier:
                             this_lyric.style.color = note['color']
@@ -52,14 +69,18 @@ def mxml_write(filepath, notes_list, id_to_harmony):
             # Color note
             if chord_index != -1:
                 this_element = this_element[chord_index]
-            if note['color'] is not None:
+            if id_to_color is not None:
+                if note['id'] in id_to_color:
+                    this_element.style.color = id_to_color[note['id']]
+            elif note['color'] is not None:
                 this_element.style.color = note['color']
 
             # Store the modified part
             parts[part_id] = this_part_flat
 
     # Get a list of harmonies sorted by offset time
-    harmonies = sorted([e for e in id_to_harmony.values()], key=lambda x: x['offset'])
+    harmonies = sorted([e for e in id_to_harmony.values()],
+                       key=lambda x: x['offset'])
     previous_offset = None
     # Write/modify harmony
     for harmony in harmonies:
@@ -75,14 +96,18 @@ def mxml_write(filepath, notes_list, id_to_harmony):
             m21_identifier = id_to_m21_identifiers[harmony_id]
             part_id = m21_identifier['part_identifier']
             if part_id not in parts:
-                raise Exception('trying to write a chord in a part with no notes')
+                raise Exception(
+                    'trying to write a chord in a part with no notes')
             else:
                 this_part_flat = parts[part_id]
             # Get element in the part
             element_identifier = m21_identifier['element_identifier']
             this_element = this_part_flat.getElementById(element_identifier)
-            # Color note
-            if harmony['color'] is not None:
+            # Color harmony
+            if id_to_color is not None:
+                if harmony['id'] in id_to_color:
+                    this_element.style.color = id_to_color[harmony['id']]
+            elif harmony['color'] is not None:
                 this_element.style.color = harmony['color']
             if write_on_top:
                 this_element.style.relativeY = 100
@@ -93,7 +118,10 @@ def mxml_write(filepath, notes_list, id_to_harmony):
             else:
                 m21_harmo = music21.harmony.ChordSymbol(
                     root=harmony['root'], bass=harmony['bass'], kind=harmony['kind'], color=harmony['color'])
-            if harmony['color'] is not None:
+            if id_to_color is not None:
+                if harmony['id'] in id_to_color:
+                    m21_harmo.style.color = id_to_color[harmony['id']]
+            elif harmony['color'] is not None:
                 m21_harmo.style.color = harmony['color']
             if write_on_top:
                 m21_harmo.style.relativeY = 100

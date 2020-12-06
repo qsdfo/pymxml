@@ -71,6 +71,8 @@ def read_score(score):
 
             # Element can be a chord symbol in lead sheets
             if 'ChordSymbol' in element.classes:
+                if element.chordKind == 'none':
+                    continue
                 # Create the chord identifier
                 id = f'{part_index}_{element_index}'
                 # Existing color?
